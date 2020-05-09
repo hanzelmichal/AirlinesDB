@@ -81,7 +81,7 @@ CREATE TABLE Client
 	Country_ID varchar(255)
 )
 GO
-DROP TABLE Client
+
 
 CREATE TABLE Price
 (
@@ -103,7 +103,7 @@ CREATE TABLE Line
 GO
 
 
-DROP TABLE Aircraft
+
 CREATE TABLE Aircraft
 (
 	Airplane_ID varchar(255) PRIMARY KEY NOT NULL,
