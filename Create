@@ -1,0 +1,147 @@
+-- tworzenie bazy danych 
+USE [master]
+GO
+
+DECLARE
+	@db_name AS NVARCHAR(255),
+	@command AS NVARCHAR(MAX);
+
+SET @db_name = N'Airlines';
+SET @command = ' DROP DATABASE ' + @db_name
+
+IF DB_ID (N'Airlines') IS NOT NULL
+BEGIN
+	SELECT 'Database [' + @db_name + '] already exists and will be delated. ' [Message 1 ]
+EXEC(@command)
+END
+GO
+
+DECLARE
+	@db_name AS NVARCHAR(255),
+        @command AS NVARCHAR(MAX),
+        @mdf_path AS NVARCHAR(MAX),
+        @ldf_path AS NVARCHAR(MAX)
+SET @db_name = N'Airlines';
+ 
+SET @mdf_path = N'''C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\'
+                + @db_name + '.mdf''';
+SET @ldf_path = N'''C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\'
+                + @db_name + '_log.ldf''';
+SELECT '-->' [Message 2], @db_name [DB name], @mdf_path [DB path], @ldf_path [LOG path]
+ 
+SET @command = ' CREATE DATABASE ' + @db_name + ' ON PRIMARY '
+                + '( NAME = ''' + @db_name + ''', FILENAME = ' + @mdf_path
+                + ', SIZE = 8192KB , MAXSIZE = 4096MB, FILEGROWTH = 65536KB ) '
+                + ' LOG ON'
+                + ' ( NAME = ''' + @db_name + '_log'', FILENAME = ' + @ldf_path
+                + ', SIZE = 8192KB , MAXSIZE = 2048MB , FILEGROWTH = 65536KB );'
+SELECT @command AS [Message 3]
+EXEC(@command) --utworzenie bazy danych
+GO
+ 
+DECLARE
+        @db_name AS NVARCHAR(255),
+        @command AS NVARCHAR(MAX);
+SET @db_name = N'Airlines'
+IF EXISTS --sprawdzenie istnienia bazy danych
+    (
+        SELECT name FROM master.dbo.sysdatabases
+        WHERE name = @db_name
+    )
+BEGIN
+    SELECT 'Database ' + @db_name + ' has been created.' AS [Message 4]
+    SET @command = ' ALTER DATABASE ' + @db_name + ' SET COMPATIBILITY_LEVEL = 140'
+    EXEC(@command)
+    SELECT 'Executed instruction ''ALTER DATABASE ' + @db_name
+            + ' SET COMPATIBILITY_LEVEL = 140.''' AS [Message 5]
+END
+GO
+
+--tworzenie tabel
+
+USE[Airlines]
+GO
+
+DROP TABLE IF EXISTS Client
+DROP TABLE IF EXISTS Price
+DROP TABLE IF EXISTS Booking
+DROP TABLE IF EXISTS Line
+DROP TABLE IF EXISTS Flight
+DROP TABLE IF EXISTS Aircraft
+DROP TABLE IF EXISTS Airport
+
+CREATE TABLE Client
+(
+	Client_ID int PRIMARY KEY NOT NULL,
+	First_Name nvarchar(255) NOT NULL,
+	Last_Name nvarchar(255) NOT NULL,
+	Phone varchar(255) NOT NULL,
+	Email nvarchar(255) NOT NULL,
+	Passport_ID nvarchar(255) NOT NULL,
+	Country_ID varchar(255)
+)
+GO
+DROP TABLE Client
+
+CREATE TABLE Price
+(
+	Seat_ID varchar(10) PRIMARY KEY NOT NULL,
+	Price_EUR money NOT NULL,
+	CHECK (Price_EUR>0)
+)
+GO
+
+
+
+
+
+CREATE TABLE Line
+(
+	Line_ID varchar(20) PRIMARY KEY NOT NULL,
+	Line_Name nvarchar(255) NOT NULL
+)
+GO
+
+
+DROP TABLE Aircraft
+CREATE TABLE Aircraft
+(
+	Airplane_ID varchar(255) PRIMARY KEY NOT NULL,
+	Country nvarchar(255) NOT NULL
+)
+GO
+
+CREATE TABLE Airport
+(
+	Airport_ID varchar(10) PRIMARY KEY NOT NULL,
+	Country nvarchar(255) NOT NULL,
+	City nvarchar(255) NOT NULL
+	
+)
+GO
+CREATE TABLE Flight
+(
+	Flight_ID varchar(20) PRIMARY KEY NOT NULL,
+	Orgin_Airport_ID varchar(10) NOT NULL, -- KLUCZ OBCY
+	Destination_Airport_ID varchar(10) NOT NULL, -- KLUCZ OBCY
+	Departure_Time datetime NOT NULL,
+	Arrival_Time datetime NOT NULL
+	CONSTRAINT fk_OrginAirportID FOREIGN KEY (Orgin_Airport_ID) REFERENCES Airport(Airport_ID),
+	CONSTRAINT fk_DestinationAirportID FOREIGN KEY (Destination_Airport_ID) REFERENCES Airport(Airport_ID),
+)
+GO
+CREATE TABLE Booking
+(
+	Client_ID int PRIMARY KEY NOT NULL,
+	Flight_ID varchar(20) NOT NULL, -- KLUCZ OBCY
+	Airplane_ID varchar(255) NOT NULL, -- KLUCZ OBCY
+	Seat_ID varchar(10) NOT NULL, -- KLUCZ OBCY
+	Line_ID varchar(20) NOT NULL -- KLUCZ OBCY
+	CONSTRAINT fk_FlightID FOREIGN KEY (Flight_ID) REFERENCES Flight(Flight_ID),
+	CONSTRAINT fk_AirplaneID FOREIGN KEY (Airplane_ID) REFERENCES Aircraft(Airplane_ID),
+	CONSTRAINT fk_SeatID FOREIGN KEY (Seat_ID) REFERENCES Price(Seat_ID),
+	CONSTRAINT fk_LineID FOREIGN KEY (Line_ID) REFERENCES Line(Line_ID)
+
+	
+)
+GO
